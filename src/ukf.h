@@ -27,7 +27,10 @@ public:
 
   ///* state covariance matrix
   MatrixXd P_;
-
+  
+  ///* Laser measurement matrix
+  MatrixXd H_laser_;
+    
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
 
@@ -54,7 +57,10 @@ public:
 
   ///* Radar measurement noise standard deviation radius change in m/s
   double std_radrd_ ;
-
+  
+  MatrixXd R_laser_;
+  MatrixXd R_radar_;
+    
   ///* Weights of sigma points
   VectorXd weights_;
 
@@ -63,10 +69,12 @@ public:
 
   ///* Augmented state dimension
   int n_aug_;
+    
+  ///* Radar measurement dimension
+  int n_z_;
 
   ///* Sigma point spreading parameter
   double lambda_;
-
 
   /**
    * Constructor
@@ -77,6 +85,7 @@ public:
    * Destructor
    */
   virtual ~UKF();
+  double normalize_angle(double angle);
 
   /**
    * ProcessMeasurement
@@ -89,7 +98,7 @@ public:
    * matrix
    * @param delta_t Time between k and k+1 in s
    */
-  void Prediction(double delta_t);
+  void Prediction(double dt);
 
   /**
    * Updates the state and the state covariance matrix using a laser measurement
