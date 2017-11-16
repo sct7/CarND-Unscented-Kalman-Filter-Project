@@ -103,10 +103,7 @@ double UKF::normalize_angle(double angle){
  */
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     
-    cout<<"Processing measurement"<<endl;
-    
     if (!is_initialized_) {
-        cout<<"Initializing"<<endl;
         time_us_= meas_package.timestamp_;
         float x0 = meas_package.raw_measurements_[0];
         float x1 = meas_package.raw_measurements_[1];
@@ -127,49 +124,16 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     time_us_ = meas_package.timestamp_;
     
     if (meas_package.sensor_type_==MeasurementPackage::RADAR){
-        cout<<"Processing Radar"<<endl;
         if (use_radar_){
             Prediction(dt);
-            cout<<"------------------------"<<endl;
-            cout<<"End of prediction step:"<<endl;
-            cout<<"px "<<x_(0)<<endl;
-            cout<<"py "<<x_(1)<<endl;
-            cout<<"v "<<x_(2)<<endl;
-            cout<<"psi "<<x_(3)<<endl;
-            cout<<"psi_dot "<<x_(4)<<endl;
-            cout<<"P: "<<endl;
-            cout<<P_<<endl;
-            cout<<"------------------------"<<endl;
             UpdateRadar(meas_package);
         }
     }else if (meas_package.sensor_type_==MeasurementPackage::LASER){
-        cout<<"Processing Laser"<<endl;
         if (use_laser_){
             Prediction(dt);
-            cout<<"------------------------"<<endl;
-            cout<<"End of prediction step:"<<endl;
-            cout<<"px "<<x_(0)<<endl;
-            cout<<"py "<<x_(1)<<endl;
-            cout<<"v "<<x_(2)<<endl;
-            cout<<"psi "<<x_(3)<<endl;
-            cout<<"psi_dot "<<x_(4)<<endl;
-            cout<<"P: "<<endl;
-            cout<<P_<<endl;
-            cout<<"------------------------"<<endl;
             UpdateLidar(meas_package);
         }
     }
-    
-    cout<<"------------------------"<<endl;
-    cout<<"End of update step:"<<endl;
-    cout<<"px "<<x_(0)<<endl;
-    cout<<"py "<<x_(1)<<endl;
-    cout<<"v "<<x_(2)<<endl;
-    cout<<"psi "<<x_(3)<<endl;
-    cout<<"psi_dot "<<x_(4)<<endl;
-    cout<<"P: "<<endl;
-    cout<<P_<<endl;
-    cout<<"------------------------"<<endl;
 }
 
 /**
@@ -178,7 +142,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  * measurement and this one.
  */
 void UKF::Prediction(double dt) {
-    cout<<"Predicting"<<endl;
     //create augmented mean vector
     VectorXd x_aug = VectorXd(n_aug_);
     
@@ -192,31 +155,25 @@ void UKF::Prediction(double dt) {
     x_aug.head(n_x_) = x_;
     // last two (representing noise) have zero mean
     x_aug.segment(n_x_, 2) << 0, 0;
-    //cout<<"x_aug:"<<endl;
-    //cout<<x_aug<<endl;
+    
     // top left (5x5) of augmented covariance matrix is just P
     P_aug.fill(0.0);
     P_aug.topLeftCorner(n_x_, n_x_) = P_;
     // bottom right (2x2)
     P_aug.bottomRightCorner(2,2) << pow(std_a_,2), 0, 0, pow(std_yawdd_,2);
-    //cout<<"P_aug:"<<endl;
-    //cout<<P_aug<<endl;
+
     MatrixXd A = P_aug.llt().matrixL();
-    //cout<<"A:"<<endl;
-    //cout<<A<<endl;
     Xsig_aug.col(0) = x_aug;
-    //cout<<"   Generating augmented sigma points"<<endl;
+
     for (int i = 0; i < n_aug_; i++) {
         Xsig_aug.col(i+1)     = x_aug + sqrt(lambda_+n_aug_) * A.col(i);
         Xsig_aug.col(i+1+n_aug_) = x_aug - sqrt(lambda_+n_aug_) * A.col(i);
     }
-    //cout<<Xsig_aug<<endl;
-    //cout<<"   Generating predicted sigma points"<<endl;
+
     //create matrix with predicted sigma points as columns
     Xsig_pred_.fill(0.0);
     for (unsigned int i=0; i<Xsig_pred_.cols(); i++){
         
-        ///cout<<i<<endl;
         float px = Xsig_aug(0,i);
         float py = Xsig_aug(1,i);
         float v = Xsig_aug(2,i);
@@ -226,19 +183,7 @@ void UKF::Prediction(double dt) {
         float nu_psi = Xsig_aug(6,i);
         
         //psi = normalize_angle(psi);
-        
-        /**
-        cout<<"px "<<px<<endl;
-        cout<<"py "<<py<<endl;
-        cout<<"v "<<v<<endl;
-        cout<<"psi "<<psi<<endl;
-        cout<<"psi_dot "<<psi_dot<<endl;
-        cout<<"nu_a "<<nu_a<<endl;
-        cout<<"nu_psi "<<nu_psi<<endl;
-        cout<<"dt "<<dt<<endl;
-        
-        cout<<"Variables assigned"<<endl;
-        */
+       
         float px_out;
         float py_out;
         if (fabs(psi_dot)>0.0001){
@@ -249,18 +194,10 @@ void UKF::Prediction(double dt) {
             py_out = py + v*sin(psi)*dt+0.5*pow(dt,2)*sin(psi)*nu_a;
         }
         
-        ///cout<<"px_out "<<px_out<<endl;
-        ///cout<<"py_out "<<py_out<<endl;
-        
         float v_out = v + dt*nu_a;
-        ///cout<<"v_out "<<v_out<<endl;
-        float psi_out = psi+psi_dot*dt + 0.5*pow(dt,2)*nu_psi;
-        //psi_out = normalize_angle(psi_out);
-        ///cout<<"psi_out "<<psi_out<<endl;
-        float psi_dot_out = psi_dot + dt*nu_psi;
-        ///cout<<"psi_dot_out "<<psi_dot_out<<endl;
         
-        ///cout<<"Pushing new variables"<<endl;
+        float psi_out = psi+psi_dot*dt + 0.5*pow(dt,2)*nu_psi;
+        float psi_dot_out = psi_dot + dt*nu_psi;
         
         Xsig_pred_.col(i) << px_out,
                              py_out,
@@ -269,26 +206,17 @@ void UKF::Prediction(double dt) {
                              psi_dot_out;
     }
     
-    ///cout<<"   Making prediction"<<endl;
-    //cout<<Xsig_pred_<<endl;
     x_.fill(0.0);
     P_.fill(0.0);
-    //cout<<"Psi_dot^2 "<<P_(4,4)<<endl;
     for (unsigned int i=0; i<Xsig_pred_.cols(); i++){
         x_+=weights_(i)*Xsig_pred_.col(i);
     }
-    MatrixXd test_x = MatrixXd(5,Xsig_pred_.cols());
-    test_x.fill(0.0);
+
     for (unsigned int i=0; i<Xsig_pred_.cols(); i++){
         VectorXd x_diff = Xsig_pred_.col(i) - x_;
         x_diff(3)=normalize_angle(x_diff(3));
-        P_+=weights_(i)*x_diff*x_diff.transpose();
-        test_x.col(i)=x_diff;
-        //cout<<"Psi_dot^2 "<<P_(4,4)<<endl;
+        P_+=weights_(i)*x_diff*x_diff.transpose();    
     }
-    //cout<<"test x"<<endl;
-    //cout<<test_x<<endl;
-    //cout<<"Psi_dot^2 "<<P_(4,4)<<endl;
 }
 
 /**
@@ -296,43 +224,22 @@ void UKF::Prediction(double dt) {
  * @param {MeasurementPackage} meas_package
  */
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
-    cout<<"Updating Lidar"<<endl;
+    
     VectorXd z = VectorXd(2);
     z << meas_package.raw_measurements_[0],
          meas_package.raw_measurements_[1];
     
-    cout<<"z:"<<endl;
-    cout<<z<<endl;
-    
-    
     VectorXd z_pred = H_laser_ * x_;
-    cout<<"z pred:"<<endl;
-    cout<<z_pred<<endl;
     VectorXd y = z - z_pred;
-    cout<<"y:"<<endl;
-    cout<<y<<endl;
     MatrixXd Ht = H_laser_.transpose();
-    cout<<"H_laser_:"<<endl;
-    cout<<H_laser_<<endl;
-    cout<<"Ht"<<endl;
-    cout<<Ht<<endl;
-    cout<<"R_laser_"<<endl;
-    cout<<R_laser_<<endl;
-
     MatrixXd S = H_laser_ * P_ * Ht + R_laser_;
-    cout<<"S:"<<endl;
-    cout<<S<<endl;
-    cout<<"S inverse:"<<endl;
-    cout<<S.inverse()<<endl;
     MatrixXd K = P_ * Ht * S.inverse();
-    cout<<"K:"<<endl;
-    cout<<K<<endl;
     
     //new estimate
-    //cout<<6<<endl;
+    
     x_ = x_ + (K * y);
     MatrixXd I = MatrixXd::Identity(n_x_, n_x_);
-    //cout<<7<<endl;
+    
     P_ = (I - K * H_laser_) * P_;
     
     x_(3)=normalize_angle(x_(3));
@@ -343,8 +250,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  * @param {MeasurementPackage} meas_package
  */
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
-    
-    cout<<"Updating Radar"<<endl;
     
     VectorXd z = VectorXd(n_z_);
     z << meas_package.raw_measurements_[0],
