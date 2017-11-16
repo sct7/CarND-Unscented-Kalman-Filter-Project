@@ -24,7 +24,7 @@ UKF::UKF() {
     P_ = MatrixXd(5, 5);
     P_ << 1, 0, 0, 0, 0,
           0, 1, 0, 0, 0,
-          0, 0, 10, 0, 0,
+          0, 0, 1, 0, 0,
           0, 0, 0, 10, 0,
           0, 0, 0, 0, 10;
 
@@ -35,7 +35,7 @@ UKF::UKF() {
                 0, 1, 0, 0, 0;
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-    std_a_ = 1.8;
+    std_a_ = 2.5;
 
     // Process noise standard deviation yaw acceleration in rad/s^2
     std_yawdd_ = M_PI/4;
@@ -224,6 +224,9 @@ void UKF::Prediction(double dt) {
         float psi_dot = Xsig_aug(4,i);
         float nu_a = Xsig_aug(5,i);
         float nu_psi = Xsig_aug(6,i);
+        
+        //psi = normalize_angle(psi);
+        
         /**
         cout<<"px "<<px<<endl;
         cout<<"py "<<py<<endl;
@@ -252,7 +255,7 @@ void UKF::Prediction(double dt) {
         float v_out = v + dt*nu_a;
         ///cout<<"v_out "<<v_out<<endl;
         float psi_out = psi+psi_dot*dt + 0.5*pow(dt,2)*nu_psi;
-        psi_out = normalize_angle(psi_out);
+        //psi_out = normalize_angle(psi_out);
         ///cout<<"psi_out "<<psi_out<<endl;
         float psi_dot_out = psi_dot + dt*nu_psi;
         ///cout<<"psi_dot_out "<<psi_dot_out<<endl;

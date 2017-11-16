@@ -1,5 +1,6 @@
 #include <uWS/uWS.h>
 #include <iostream>
+#include <fstream>
 #include "json.hpp"
 #include <math.h>
 #include "ukf.h"
@@ -112,7 +113,7 @@ int main()
     	  //Push the current estimated x,y positon from the Kalman filter's state vector
 
     	  VectorXd estimate(4);
-
+            
     	  double p_x = ukf.x_(0);
     	  double p_y = ukf.x_(1);
     	  double v  = ukf.x_(2);
@@ -120,7 +121,23 @@ int main()
 
     	  double v1 = cos(yaw)*v;
     	  double v2 = sin(yaw)*v;
-
+            cout<<"#######"<<endl;
+            cout<<"Ground Truth"<<endl;
+            cout<<"x: "<<x_gt<<endl;
+            cout<<"y: "<<y_gt<<endl;
+            cout<<"vx: "<<vx_gt<<endl;
+            cout<<"vy: "<<vy_gt<<endl;
+            cout<<"yaw: "<<atan2(vy_gt, vx_gt)<<endl;
+            cout<<"-------"<<endl;
+            cout<<"Predicted: "<<endl;
+            cout<<"px: "<<p_x<<endl;
+            cout<<"py: "<<p_y<<endl;
+            cout<<"pvx "<<v1<<endl;
+            cout<<"pvy "<<v2<<endl;
+            cout<<"yaw: "<<yaw<<endl;
+            cout<<"#########"<<endl;
+            
+            
     	  estimate(0) = p_x;
     	  estimate(1) = p_y;
     	  estimate(2) = v1;
